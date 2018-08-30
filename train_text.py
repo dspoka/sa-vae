@@ -282,20 +282,10 @@ def main(args):
         break
 
 def calc_iw(args, data, model, meta_optimizer, criterion, device):
-  # for i in range(len(data)):
-  #   mean, logvar = model._enc_forward(sents)
-  #   z_samples = model._reparameterize(mean, logvar)
-  #   preds = model._dec_forward(sents, z_samples)
-  #   nll_vae = sum([criterion(preds[:, l], sents[:, l+1]) for l in range(length)])
-  #   total_nll_vae += nll_vae.item()*batch_size
-  #   kl_vae = utils.kl_loss_diag(mean, logvar)
-  #   total_kl_vae += kl_vae.item()*batch_size
-  # ppl_bound_vae = np.exp((total_nll_vae + total_kl_vae)/num_words)
-
   report_nll_loss = 0
   report_num_words = report_num_sents = 0
 
-  num_iw_samples = 3
+  num_iw_samples = 500
   for i in range(len(data)):
     sents, length, batch_size = data[i]
     sents = sents.to(device)
@@ -308,32 +298,23 @@ def calc_iw(args, data, model, meta_optimizer, criterion, device):
       mean, logvar = model._enc_forward(sents)
       z_samples = model._reparameterize(mean, logvar)
       preds = model._dec_forward(sents, z_samples)
-      # nll_vae = sum([criterion(preds[:, l], sents[:, l+1]) for l in range(length)]) #averaged over batch
-      # print("OG nll_vae", nll_vae*batch_size)
 
       nll_vae = torch.Tensor([length*criterion(preds[l, :], sents[l, 1:]) for l in range(batch_size)]).to(device)
-      # print("nll_vae", nll_vae.size(), torch.sum(nll_vae))
       kl_vae = utils.kl_loss_diag(mean, logvar, average=False)
-
       batch_log_likelihood = nll_vae + kl_vae
-      # print("batch_log_likelihood", batch_log_likelihood.size())
-      # print("zsamples", z_samples.size())
-      # print("kl_vae", kl_vae.size())
+
       zeros = torch.zeros_like(mean)
       log_prior = utils.log_normal(z_samples, zeros, zeros)
       log_approx_posterior = utils.log_normal(z_samples, mean, logvar)
-      # print("log_prior", log_prior.size())
-      # print("log_approx_posterior", log_approx_posterior.size())
-      batch_iwae[:, j] = batch_log_likelihood.add_(log_prior).add_(-1*log_approx_posterior).data - np.log(num_iw_samples)
+      batch_iwae[:, j] = (batch_log_likelihood + log_prior -log_approx_posterior).data
 
-    batch_iw_loss = utils.logsumexp(batch_iwae)
+    batch_iw_loss = utils.logsumexp(batch_iwae) - np.log(num_iw_samples)
     report_nll_loss += torch.sum(batch_iw_loss).item()
 
   nll = report_nll_loss / report_num_sents
-  ppl = np.exp(nll * report_num_sents / report_num_words)
+  ppl = np.exp(report_nll_loss / report_num_words)
   print('iw nll: %.4f, iw ppl: %.4f' % (nll, ppl))
   sys.stdout.flush()
-
 
 def eval(args, data, model, meta_optimizer, device):
   model.dropout.eval()
@@ -345,7 +326,8 @@ def eval(args, data, model, meta_optimizer, device):
 
   # criterion = nn.NLLLoss().cuda()
   criterion = nn.NLLLoss().to(device)
-  calc_iw(args, data, model, meta_optimizer, criterion, device)
+  if args.model == 'vae':
+    calc_iw(args, data, model, meta_optimizer, criterion, device)
   num_sents = 0
   num_words = 0
   total_nll_autoreg = 0.
@@ -413,6 +395,8 @@ def eval(args, data, model, meta_optimizer, device):
   ppl_svi = np.exp(total_nll_svi/num_words)
   kl_svi = total_kl_svi/num_sents
   ppl_bound_svi = np.exp((total_nll_svi + total_kl_svi)/num_words)
+  print("num_words", num_words)
+  print("num_sents", num_sents)
   print('AR PPL: %.4f, VAE PPL: %.4f, VAE KL: %.4f, VAE PPL BOUND: %.4f, SVI PPL: %.4f, SVI KL: %.4f, SVI PPL BOUND: %.4f' %
         (ppl_autoreg, ppl_vae, kl_vae, ppl_bound_vae, ppl_svi, kl_svi, ppl_bound_svi))
   model.train()

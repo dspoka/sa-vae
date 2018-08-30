@@ -4,17 +4,17 @@ import train_text
 
 def preprocess_config():
     config = argparse.Namespace()
-    config.trainfile = '/remote/bones/user/dspokoyn/vae-mode-collapse/datasets/yahoo/data_yahoo_release/train.txt'
-    config.valfile = '/remote/bones/user/dspokoyn/vae-mode-collapse/datasets/yahoo/data_yahoo_release/valid.txt'
-    config.testfile = '/remote/bones/user/dspokoyn/vae-mode-collapse/datasets/yahoo/data_yahoo_release/test.txt'
+    config.trainfile = '/remote/bones/user/dspokoyn/vae-mode-collapse/yahoo_data/yahoo.train.txt'
+    config.valfile = '/remote/bones/user/dspokoyn/vae-mode-collapse/yahoo_data/yahoo.valid.txt'
+    config.testfile = '/remote/bones/user/dspokoyn/vae-mode-collapse/yahoo_data/yahoo.test.txt'
     config.outputfile = 'data/yahoo/yahoo'
-    # config.vocabsize = 70000
-    config.vocabsize = 11
+    config.vocabsize = 70000
+    # config.vocabsize = 11
     config.vocabminfreq = -1
-    # config.batchsize = 32
-    config.batchsize = 256
-    # config.seqlength = 200
+    config.batchsize = 33
+    # config.batchsize = 256
     config.seqlength = 20
+    # config.seqlength = 20
     config.vocabfile = ''
     config.shuffle = 1
     return config
@@ -45,11 +45,12 @@ def train_config():
     # # Optimization options
     config.checkpoint_path ='baseline.pt'
     config.slurm =0
-    config.warmup =10
-    # config.num_epochs =30
-    # config.min_epochs =15
-    config.num_epochs =3
-    config.min_epochs =1
+    # config.warmup =10
+    config.warmup =0
+    config.num_epochs =30
+    config.min_epochs =15
+    # config.num_epochs =3
+    # config.min_epochs =1
     config.start_epoch =0
     config.svi_steps =20
     config.svi_lr1 =1
