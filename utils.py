@@ -20,7 +20,7 @@ def log_bernoulli_loss(pred, y, min_eps=1e-5, max_eps=1.-1e-5, average=True):
   log_bernoulli = y_vec * torch.log(prob) + (1. - y_vec)*torch.log(1. - prob)
   if average:
     return -torch.mean(torch.sum(log_bernoulli, 1))
-  else: 
+  else:
     return -torch.sum(log_bernoulli, 1)
 
 def logsumexp(x):
@@ -37,11 +37,26 @@ def kl_loss_diag(mean, logvar, logvar_prior=None, average=True):
   if logvar_prior is None:
     result = -0.5 * torch.sum(logvar - torch.pow(mean, 2) - torch.exp(logvar) + 1, 1)
   else:
-    logvar_prior = logvar_prior.unsqueeze(0).expand_as(logvar)        
+    logvar_prior = logvar_prior.unsqueeze(0).expand_as(logvar)
     result =  -0.5 * torch.sum(logvar - logvar_prior - torch.pow(mean, 2) / logvar_prior.exp() -
                             torch.exp(logvar - logvar_prior) + 1, 1)
   if average:
     return result.mean()
   else:
     return result
-    
+
+
+def log_normal(x, mean, logvar):
+    """Implementation WITHOUT constant, since the constants in p(z)
+    and q(z|x) cancels out.
+    Args:
+        x: [B,Z]
+        mean,logvar: [B,Z]
+    Returns:
+        output: [B]
+    """
+    return -0.5 * (logvar.sum(1) + ((x - mean).pow(2) / torch.exp(logvar)).sum(1))
+
+def log_mean_exp(x):
+    max_, _ = torch.max(x, 1, keepdim=True)
+    return torch.log(torch.mean(torch.exp(x - max_), 1)) + torch.squeeze(max_)

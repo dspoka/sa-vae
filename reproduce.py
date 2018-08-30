@@ -14,7 +14,7 @@ def preprocess_config():
     # config.batchsize = 32
     config.batchsize = 256
     # config.seqlength = 200
-    config.seqlength = 50
+    config.seqlength = 20
     config.vocabfile = ''
     config.shuffle = 1
     return config
@@ -97,6 +97,7 @@ def vae_svi_kl_default(config):
 def sa_vae_default(config):
     config.model = 'savae'
     config.svi_steps = 20
+    # config.svi_steps = 2 #small
     config.train_n2n = 1
     return config
 
@@ -117,11 +118,11 @@ if __name__ == '__main__':
     preprocess_text.get_data(prep_config)
     tr_config = train_config()
     # tr_config.mode = 'autoreg'
-    # tr_config.mode = 'vae'
+    tr_config.mode = 'vae'
     # tr_config.mode = 'svi'
     # tr_config.mode = 'vae_svi'
     # tr_config.mode = 'vae_svi_kl'
-    tr_config.mode = 'sa_vae'
+    # tr_config.mode = 'sa_vae'
     if tr_config.mode == 'autoreg':
         tr_config =  autoreg_default(tr_config)
     elif tr_config.mode == 'vae':
