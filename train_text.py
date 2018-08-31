@@ -108,7 +108,9 @@ def main(args):
     else:
         args.beta = args.kl_start
 
-    criterion = nn.NLLLoss()
+
+    criterion = nn.NLLLoss(reduce=False)
+    # criterion = nn.NLLLoss()
     # model.cuda()
     # criterion.cuda()
     # model = torch.nn.DataParallel(net, device_ids=[0, 1])
@@ -172,7 +174,9 @@ def main(args):
             optimizer.zero_grad()
             if args.model == 'autoreg':
                 preds = model._dec_forward(sents, None, True)
-                nll_autoreg = sum([criterion(preds[:, l], sents[:, l+1]) for l in range(length)])
+                tgt = sents[:, 1:].contiguous()
+                nll_autoreg = criterion(preds.view(-1, preds.size(2)), tgt.view(-1)).view(preds.size(0), -1).sum(-1).mean(0)
+                # nll_autoreg = sum([criterion(preds[:, l], sents[:, l+1]) for l in range(length)])
                 train_nll_autoreg += nll_autoreg.item()*batch_size
                 # train_nll_autoreg += nll_autoreg.data[0]*batch_size #old
                 nll_autoreg.backward()
@@ -186,7 +190,9 @@ def main(args):
                 mean_svi_final, logvar_svi_final = var_params_svi
                 z_samples = model._reparameterize(mean_svi_final.detach(), logvar_svi_final.detach())
                 preds = model._dec_forward(sents, z_samples)
-                nll_svi = sum([criterion(preds[:, l], sents[:, l+1]) for l in range(length)])
+                tgt = sents[:, 1:].contiguous()
+                nll_svi = criterion(preds.view(-1, preds.size(2)), tgt.view(-1)).view(preds.size(0), -1).sum(-1).mean(0)
+                # nll_svi = sum([criterion(preds[:, l], sents[:, l+1]) for l in range(length)])
                 train_nll_svi += nll_svi.data[0]*batch_size
                 kl_svi = utils.kl_loss_diag(mean_svi_final, logvar_svi_final)
                 train_kl_svi += kl_svi.data[0]*batch_size
@@ -196,7 +202,9 @@ def main(args):
                 mean, logvar = model._enc_forward(sents)
                 z_samples = model._reparameterize(mean, logvar)
                 preds = model._dec_forward(sents, z_samples)
-                nll_vae = sum([criterion(preds[:, l], sents[:, l+1]) for l in range(length)])
+                tgt = sents[:, 1:].contiguous()
+                nll_vae = criterion(preds.view(-1, preds.size(2)), tgt.view(-1)).view(preds.size(0), -1).sum(-1).mean(0)
+                # nll_vae = sum([criterion(preds[:, l], sents[:, l+1]) for l in range(length)])
                 # train_nll_vae += nll_vae.data[0]*batch_size#old
                 train_nll_vae += nll_vae.item()*batch_size
                 kl_vae = utils.kl_loss_diag(mean, logvar)
@@ -214,7 +222,9 @@ def main(args):
                     mean_svi_final, logvar_svi_final = var_params_svi
                     z_samples = model._reparameterize(mean_svi_final, logvar_svi_final)
                     preds = model._dec_forward(sents, z_samples)
-                    nll_svi = sum([criterion(preds[:, l], sents[:, l+1]) for l in range(length)])
+                    tgt = sents[:, 1:].contiguous()
+                    nll_svi = criterion(preds.view(-1, preds.size(2)), tgt.view(-1)).view(preds.size(0), -1).sum(-1).mean(0)
+                    # nll_svi = sum([criterion(preds[:, l], sents[:, l+1]) for l in range(length)])
                     train_nll_svi += nll_svi.data[0]*batch_size
                     kl_svi = utils.kl_loss_diag(mean_svi_final, logvar_svi_final)
                     train_kl_svi += kl_svi.data[0]*batch_size
