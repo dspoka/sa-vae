@@ -342,7 +342,7 @@ def calc_iw(args, data, model, meta_optimizer, criterion, device):
 
             nll_vae = torch.Tensor([length*criterion(preds[l, :], sents[l, 1:]) for l in range(batch_size)]).to(device)
             # kl_vae = utils.kl_loss_diag(mean, logvar, average=False)
-            batch_log_likelihood = nll_vae
+            batch_log_likelihood = -nll_vae
 
             zeros = torch.zeros_like(mean)
             log_prior = utils.log_normal(z_samples, zeros, zeros)
@@ -350,7 +350,7 @@ def calc_iw(args, data, model, meta_optimizer, criterion, device):
             batch_iwae[:, j] = (batch_log_likelihood + log_prior - log_approx_posterior).data
 
         batch_iw_loss = utils.logsumexp(batch_iwae) - np.log(num_iw_samples)
-        report_nll_loss += torch.sum(batch_iw_loss).item()
+        report_nll_loss += torch.sum(-batch_iw_loss).item()
 
     nll = report_nll_loss / report_num_sents
     ppl = np.exp(report_nll_loss / report_num_words)
@@ -367,8 +367,8 @@ def eval(args, data, model, meta_optimizer, device):
 
     # criterion = nn.NLLLoss().cuda()
     criterion = nn.NLLLoss().to(device)
-    # if args.model == 'vae':
-    #     calc_iw(args, data, model, meta_optimizer, criterion, device)
+    if args.model == 'vae':
+        calc_iw(args, data, model, meta_optimizer, criterion, device)
     num_sents = 0
     num_words = 0
     total_nll_autoreg = 0.

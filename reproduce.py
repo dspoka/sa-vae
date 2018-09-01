@@ -14,8 +14,8 @@ def preprocess_config():
     config.vocabminfreq = -1
     config.batchsize = 32
     # config.batchsize = 256
-    config.seqlength = 200
-    # config.seqlength = 20
+    # config.seqlength = 200
+    config.seqlength = 20
     config.vocabfile = ''
     config.shuffle = 1
     return config
@@ -49,7 +49,7 @@ def train_config():
     config.warmup =10
     config.kl_start = 0.1
     # config.warmup =0
-    config.num_epochs =100
+    config.num_epochs =10
     # config.min_epochs =15
     # config.num_epochs =3
     # config.min_epochs =1
@@ -132,8 +132,8 @@ if __name__ == '__main__':
     preprocess_text.get_data(prep_config)
     args = train_config()
     args.dataset = 'yahoo'
-    args.mode = 'autoreg'
-    # args.mode = 'vae'
+    # args.mode = 'autoreg'
+    args.mode = 'vae'
     # args.mode = 'svi'
     # args.mode = 'vae_svi'
     # args.mode = 'vae_svi_kl'
@@ -167,5 +167,5 @@ if __name__ == '__main__':
         train_text.main(args)
     else:
         args.test = 1
-        args.train_from = args.checkpoint_path +'_' + '206.11166362842684.pt'
+        args.train_from = args.checkpoint_path +'_' + '60.07335064133073.pt'
         train_text.main(args)
